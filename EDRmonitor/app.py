@@ -5,6 +5,9 @@ from flask import render_template
 
 # init Flask instance
 app = Flask(__name__)
+url = '192.168.0.105'
+port = 8080
+debug = True
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -17,4 +20,4 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run('192.168.0.105', 8080, debug=True)
+    app.run(url, port, debug=debug)
