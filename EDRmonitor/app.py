@@ -12,6 +12,7 @@ debug = True
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    print(request.json)
     # return render_template('index.html')
     if request.method == 'GET':
         return jsonify({'method': 'get'})
