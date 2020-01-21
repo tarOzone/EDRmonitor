@@ -1,1 +1,1 @@
-web: gunicorn edrmonitor/app:app
+web: gunicorn wsgi:app
