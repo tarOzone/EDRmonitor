@@ -16,7 +16,7 @@ def get_data():
         mode = json_request['mode']
         speed = json_request['speed'] * (18./5.)
         distance = json_request['total_distance'] / 1000.
-        elapsed_time = json_request['elapsed_time'] 
+        elapsed_time = json_request['elapsed_time']
         timestamp = datetime.now().strftime("%Y/%m/%d,%H:%M:%S")
     except TypeError:
         return None, None, None, None, None, None, None, None
