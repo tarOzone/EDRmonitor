@@ -23,7 +23,7 @@ def index():
         return jsonify({'method': 'post'})
 
 
-if __name__ == "__main__":
-    hostname = socket.gethostname()
-    IPAddr = socket.gethostbyname(hostname)
-    app.run(IPAddr, 5000)
+# if __name__ == "__main__":
+#     hostname = socket.gethostname()
+#     IPAddr = socket.gethostbyname(hostname)
+#     app.run(IPAddr, 5000)
