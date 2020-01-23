@@ -1,103 +1,68 @@
-from screeninfo import get_monitors
-from tkinter import Tk, W, E
-from tkinter.ttk import Frame, Button, Entry, Style
-
-
-def get_screen_info():
-    for m in get_monitors():
-        print(str(m))
+from PIL import Image, ImageTk
+from tkinter import messagebox, PhotoImage
+from tkinter import Tk, BOTH, Button, StringVar, RAISED, OUTSIDE, Label
+from tkinter.ttk import Frame, Style
 
 
 class Example(Frame):
-    def __init__(self):
+    def __init__(self, width, height):
         super().__init__()
+
+        self.edr_logo_size = (200, 200)
+        self.start_btn_size = (200, 100)
+
+        self.width = width
+        self.height = height
         self.initUI()
 
+
     def initUI(self):
-        self.master.title("EDRMonitor")
-        Style().configure("TButton", padding=(0, 5, 0, 5), font='serif 10')
 
-        self.columnconfigure(0, pad=3)
-        self.columnconfigure(1, pad=3)
-        self.columnconfigure(2, pad=3)
-        self.columnconfigure(3, pad=3)
+        self.master.title("Absolute positioning")
+        self.pack(fill=BOTH, expand=1)
 
-        self.rowconfigure(0, pad=3)
-        self.rowconfigure(1, pad=3)
-        self.rowconfigure(2, pad=3)
-        self.rowconfigure(3, pad=3)
-        self.rowconfigure(4, pad=3)
+        Style().configure("TFrame", background="#212121")
 
-        entry = Entry(self)
-        entry.grid(row=0, columnspan=4, sticky=W+E)
+        edr_logo = Image.open("edr.png")
+        edr_logo = edr_logo.resize((150, 150))
+        edr_logo = ImageTk.PhotoImage(edr_logo)
+        edr_lbl = Label(self, image=edr_logo, borderwidth=0)
+        edr_lbl.image = edr_logo
+        edr_lbl.pack(side="left", anchor='n')
 
-        cls = Button(self, text="Cls")
-        cls.grid(row=1, column=0)
+        batt_width, batt_heigh = 250, 125
+        battery = Image.open("battery_75.png")
+        battery = battery.resize((batt_width, batt_heigh))
+        battery = ImageTk.PhotoImage(battery)
+        battery_lbl = Label(self, image=battery, borderwidth=0)
+        battery_lbl.image = battery
+        battery_lbl.pack(side="right", anchor='n', padx=batt_width//10, pady=batt_heigh//10)
 
-        bck = Button(self, text="Back")
-        bck.grid(row=1, column=1)
+        batt_percent = 72
+        batt_lbl = Label(self, text=f"{batt_percent}%", bg="#212121", fg="white")
+        batt_lbl.config(font=("Lucida Console", 75))
+        batt_lbl.pack(side="right", anchor='n', pady=batt_heigh//5)
 
-        lbl = Button(self)
-        lbl.grid(row=1, column=2)
+        speed = 24.15
+        spd_lbl = Label(self, text=f"{speed}", bg="#212121", fg="#30a14a")
+        spd_lbl.config(font=("fangsongti", 200))
+        # spd_lbl.pack(side='top', anchor='e', pady=self.height // 2.6)
+        spd_lbl.pack(side='top', anchor='ne', pady=(200, 0))
 
-        clo = Button(self, text="Close")
-        clo.grid(row=1, column=3)
-
-        sev = Button(self, text="7")
-        sev.grid(row=2, column=0)
-
-        eig = Button(self, text="8")
-        eig.grid(row=2, column=1)
-
-        nin = Button(self, text="9")
-        nin.grid(row=2, column=2)
-
-        div = Button(self, text="/")
-        div.grid(row=2, column=3)
-
-        fou = Button(self, text="4")
-        fou.grid(row=3, column=0)
-
-        fiv = Button(self, text="5")
-        fiv.grid(row=3, column=1)
-
-        six = Button(self, text="6")
-        six.grid(row=3, column=2)
-
-        mul = Button(self, text="*")
-        mul.grid(row=3, column=3)
-
-        one = Button(self, text="1")
-        one.grid(row=4, column=0)
-
-        two = Button(self, text="2")
-        two.grid(row=4, column=1)
-
-        thr = Button(self, text="3")
-        thr.grid(row=4, column=2)
-
-        mns = Button(self, text="-")
-        mns.grid(row=4, column=3)
-
-        zer = Button(self, text="0")
-        zer.grid(row=5, column=0)
-
-        dot = Button(self, text=".")
-        dot.grid(row=5, column=1)
-
-        equ = Button(self, text="=")
-        equ.grid(row=5, column=2)
-
-        pls = Button(self, text="+")
-        pls.grid(row=5, column=3)
-
-        self.pack()
+        unit_lbl = Label(self, text="Km/hr", bg="#212121", fg="#30a14a")
+        unit_lbl.config(font=("fangsongti", 72))
+        unit_lbl.pack(side='top', anchor='e')
 
 
 if __name__ == '__main__':
     root = Tk()
     root.wm_attributes('-fullscreen', 'true')
-    # root.geometry('%dx%d+%d+%d' % (500, 500, 0, 0))
 
-    app = Example()
+    width = root.winfo_screenwidth()
+    height = root.winfo_screenheight()
+
+    print(width, height)
+
+    app = Example(width, height)
     root.mainloop()
+
