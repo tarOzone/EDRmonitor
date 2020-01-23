@@ -3,7 +3,7 @@ import json
 from time import sleep
 from serial import Serial
 from datetime import datetime
-from serial.serialutil import SerialException
+from serial.serialutil import SerialException, SerialTimeoutException
 
 
 def read_config(config_file):
@@ -24,6 +24,7 @@ class SerialArduino:
         self.ser = None
         self.serial_lists = []
         self.csv_columns = csv_columns
+        # connect to the arduino according to the port
         self.connect()
 
     def readline(self):
@@ -37,8 +38,12 @@ class SerialArduino:
             return {}
 
     def connect(self):
+        count = 0
         while not self.connect_serial():
             sleep(1)
+            count += 1
+            if count >= 10:
+                raise SerialTimeoutException("Arduino port not found!")
         print("[SUCCESS] Connection DONE!!!")
 
     def connect_serial(self):
@@ -60,9 +65,9 @@ class SerialArduino:
         print("CLOSING...")
         try:
             self.ser.close()
+            self.export_csv()
         except AttributeError:
             pass
-        self.export_csv()
         
 
 if __name__ == "__main__":
@@ -73,5 +78,7 @@ if __name__ == "__main__":
             line = ser.readline()
             print(line)
     finally:
-        del ser
-
+        try:
+            del ser
+        except NameError:
+            pass
