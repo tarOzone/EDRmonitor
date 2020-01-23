@@ -2,13 +2,12 @@ from flask import request
 from datetime import datetime
 
 
-def read_json_request():
+def _read_json_request():
     return request.json
 
 
 def get_data():
-    json_request = read_json_request()
-
+    json_request = _read_json_request()
     try:
         latitude = json_request['latitude']
         longitude = json_request['longitude']
