@@ -1,0 +1,15 @@
+{
+  "port": "COM14",
+  "baud_rate": 9600,
+  "columns": [
+    "mode",
+    "pedal",
+    "temp",
+    "latitude",
+    "longitude",
+    "altitude",
+    "speed",
+    "total_distance",
+    "elapsed_time"
+  ]
+}
