@@ -15,5 +15,5 @@ def read_icons(icon_path, width, height):
     icons_dict = {}
     for img in glob(icon_path):
         percent = os.path.splitext(os.path.basename(img))[0]
-        icons_dict[int(percent)] = _read_img(img, width, height)
+        icons_dict[percent] = _read_img(img, width, height)
     return icons_dict
