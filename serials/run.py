@@ -27,25 +27,20 @@ class Example(Frame):
         self.pack(fill=BOTH, expand=1)
         Style().configure("TFrame", background="#212121")
 
-        # logo_width, logo_height = 150, 150
-        # edr_logo = self.read_img("edr.png", logo_width, logo_height)
-        # edr_lbl = Label(self, image=edr_logo, borderwidth=0)
-        # edr_lbl.image = edr_logo
-        # edr_lbl.pack(side="left", anchor='n')
 
         vu_width, vu_height = 300, 70
         vu_labelframe = LabelFrame(self, bg="#212121", borderwidth=0)
         vu_labelframe.pack(side="left", anchor='w', fill='y')
 
-        ped_percent = 66
-        pad_lbl = Label(vu_labelframe, text=f"{ped_percent}%", bg="#212121", fg="white")
-        pad_lbl.config(font=("fangsongti", 50))
-        pad_lbl.pack(anchor='nw')
-
         vu_meter = self.read_img("vu_meter_50.png", vu_width, vu_height)
         vu_lbl = Label(vu_labelframe, image=vu_meter, borderwidth=0)
         vu_lbl.image = vu_meter
         vu_lbl.pack(anchor='nw')
+
+        ped_percent = 66
+        pad_lbl = Label(vu_labelframe, text=f"{ped_percent}%", bg="#212121", fg="white")
+        pad_lbl.config(font=("fangsongti", 50))
+        pad_lbl.pack(anchor='nw')
 
         distance = 16.50
         km_lbl = Label(vu_labelframe, text="KM", bg="#212121", fg="white")
@@ -65,29 +60,52 @@ class Example(Frame):
 
         # =============================================================
 
-        _time = datetime.now().strftime("%d/%m/%Y\n%H:%M:%S")
-
-        speed = 24.15
-        spd_labelframe = LabelFrame(self, borderwidth=0, bg="#FFF")
+        spd_labelframe = LabelFrame(self, borderwidth=0, bg="#212121")
         spd_labelframe.pack(side='left', fill='y')
 
+        logo_width, logo_height = 100, 100
+        edr_logo = self.read_img("edr.png", logo_width, logo_height)
+        edr_lbl = Label(spd_labelframe, image=edr_logo, borderwidth=0)
+        edr_lbl.image = edr_logo
+        edr_lbl.pack(side="top")
+
+        _time = datetime.now().strftime("%d/%m/%Y\n%H:%M:%S")
         time_lbl = Label(spd_labelframe, text=_time, bg="#212121", fg="white")
-        time_lbl.config(font=("fangsongti", 25))
+        time_lbl.config(font=("fangsongti", 20))
         time_lbl.pack(side='top')
 
-        spd_lbl = Label(spd_labelframe, text=f"{speed}", bg="#212121", fg="#30a14a")
+        speed = 24.15
+        spd_lbl = Label(spd_labelframe, text=f"{speed}", bg="#212121", fg="#65dba8")
         spd_lbl.config(font=("fangsongti", 220))
         spd_lbl.pack(side='top')
-        unit_lbl = Label(spd_labelframe, text="Km/hr", bg="#212121", fg="#30a14a")
+        unit_lbl = Label(spd_labelframe, text="Km/hr", bg="#212121", fg="#65dba8")
         unit_lbl.config(font=("fangsongti", 72))
         unit_lbl.pack(side='top')
+
+        icon_width, icon_height = 150, 150
+        sensor_labelframe = LabelFrame(spd_labelframe, borderwidth=0, bg="#212121")
+        sensor_labelframe.pack(side='bottom', padx=icon_width)
+
+        edr_logo = self.read_img("hall_1.png", icon_width, icon_height)
+        edr_lbl = Label(sensor_labelframe, image=edr_logo, borderwidth=0)
+        edr_lbl.image = edr_logo
+        edr_lbl.pack(side="left")
+
+        edr_logo = self.read_img("temp_medium.png", icon_width, icon_height)
+        edr_lbl = Label(sensor_labelframe, image=edr_logo, borderwidth=0)
+        edr_lbl.image = edr_logo
+        edr_lbl.pack(side="left")
 
         # =============================================================
 
         batt_percent = 77
+
+        right_labelframe = LabelFrame(self, bg="#212121", borderwidth=0)
+        right_labelframe.pack(side='left', fill='y')
+
         batt_width, batt_height = 200, 100
-        batt_labelframe = LabelFrame(self, bg="#212121", borderwidth=0)
-        batt_labelframe.pack(side="right", anchor='n', padx=batt_width // 10, pady=batt_height // 5)
+        batt_labelframe = LabelFrame(right_labelframe, bg="#212121", borderwidth=0)
+        batt_labelframe.pack(side="top", anchor='n', padx=batt_width // 10, pady=batt_height // 5)
 
         battery = self.read_img("battery_75.png", batt_width, batt_height)
         battery_lbl = Label(batt_labelframe, image=battery, borderwidth=0)
@@ -97,6 +115,10 @@ class Example(Frame):
         batt_lbl.config(font=("fangsongti", 50))
         batt_lbl.pack(side='top', anchor='e', padx=(0, batt_width // 10))
 
+        power = "06:55"
+        pw_lbl = Label(right_labelframe, text=power, bg="#212121", fg="white")
+        pw_lbl.config(font=("Lucida Console", 75))
+        pw_lbl.pack(side='bottom')
 
 
 
