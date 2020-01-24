@@ -23,9 +23,9 @@ class Example(Frame):
         self.count = 0
         self.distance = 0
 
-        self.VU = read_icons('images/vu/*.png', 300, 100)
+        self.VU = read_icons('images/vu/*.png', 500, 100)
         self.BATT = read_icons('images/battery/*.png', 150, 100)
-        self.LOGO = read_icons('images/logo/*.png', 150, 150)
+        self.LOGO = read_icons('images/logo/*.png', 200, 200)
         self.HALL = read_icons('images/hall/*.png', 150, 150)
         self.TEMP = read_icons('images/temp/*.png', 150, 150)
 
@@ -34,28 +34,28 @@ class Example(Frame):
         self.height = height
         self.initUI()
 
-        # self.root.bind('<KeyPress>', self.press)
-        # self.root.bind('<KeyRelease>', self.release)
+        self.root.bind('<KeyPress>', self.press)
+        self.root.bind('<KeyRelease>', self.release)
         self.update_time()
 
-    # def press(self, event):
-    #     d = 3
-    #     if self.pedal < 100:
-    #         self.pedal += d
-    #         self.pedal = min(100, self.pedal)
-    #     for i in range(d):
-    #         img = self.VU[str(self.pedal // 10 * 10)]
-    #         self.vu_lbl.configure(image=img)
-    #         self.vu_lbl.image = img
-    #         self.pad_lbl.configure(text='{:>4}%'.format(self.pedal))
-    #
-    # def release(self, event):
-    #     sleep(0.5)
-    #     self.pedal = 0
-    #     img = self.VU[str(self.pedal // 10 * 10)]
-    #     self.vu_lbl.configure(image=img)
-    #     self.vu_lbl.image = img
-    #     self.pad_lbl.configure(text='{:>4}%'.format(self.pedal))
+    def press(self, event):
+        d = 3
+        if self.pedal < 100:
+            self.pedal += d
+            self.pedal = min(100, self.pedal)
+        for i in range(d):
+            img = self.VU[str(self.pedal // 10 * 10)]
+            self.vu_lbl.configure(image=img)
+            self.vu_lbl.image = img
+            self.pad_lbl.configure(text='{:>4}%'.format(self.pedal))
+
+    def release(self, event):
+        sleep(0.5)
+        self.pedal = 0
+        img = self.VU[str(self.pedal // 10 * 10)]
+        self.vu_lbl.configure(image=img)
+        self.vu_lbl.image = img
+        self.pad_lbl.configure(text='{:>4}%'.format(self.pedal))
 
     def update_time(self):
         _time = datetime.now().strftime("%d/%m/%Y\n%H:%M:%S")
@@ -74,14 +74,15 @@ class Example(Frame):
         vu_labelframe = LabelFrame(self, bg="#212121", borderwidth=0)
         vu_labelframe.pack(side="left", anchor='w', fill='y')
 
-        img_vu = self.VU[str(self.pedal // 10 *10)]
-        self.vu_lbl = Label(vu_labelframe, image=img_vu, borderwidth=0)
-        self.vu_lbl.image = img_vu
-        self.vu_lbl.pack(anchor='nw')
+        img_logo = self.LOGO['edr']
+        edr_lbl = Label(vu_labelframe, image=img_logo, borderwidth=0)
+        edr_lbl.image = img_logo
+        edr_lbl.pack(side="top")
 
-        self.pad_lbl = Label(vu_labelframe, text="{:>4}%".format(self.pedal), bg="#212121", fg="white")
-        self.pad_lbl.config(font=("fangsongti", 85))
-        self.pad_lbl.pack(anchor='nw')
+        _time = datetime.now().strftime("%d/%m/%Y\n%H:%M:%S")
+        self.time_lbl = Label(vu_labelframe, text=_time, bg="#212121", fg="white")
+        self.time_lbl.config(font=("fangsongti", 44))
+        self.time_lbl.pack(side='top')
 
         km_lbl = Label(vu_labelframe, text="KM", bg="#212121", fg="white")
         km_lbl.config(font=("Lucida Console", 45))
@@ -92,25 +93,24 @@ class Example(Frame):
 
         kw_lbl = Label(vu_labelframe, text="KW", bg="#212121", fg="white")
         kw_lbl.config(font=("Lucida Console", 45))
-        kw_lbl.pack(side='right', anchor="se", pady=100//2)
+        kw_lbl.pack(side='right', anchor="se", pady=50)
         pw_lbl = Label(vu_labelframe, text="{:04d}".format(self.power), bg="#212121", fg="white")
         pw_lbl.config(font=("Lucida Console", 75))
-        pw_lbl.pack(side='bottom', anchor="s", pady=100//2)
+        pw_lbl.pack(side='bottom', anchor="s", pady=50)
 
         # =============================================================
 
         spd_labelframe = LabelFrame(self, borderwidth=0, bg="#212121")
         spd_labelframe.pack(side='left', fill='y')
 
-        img_logo = self.LOGO['edr']
-        edr_lbl = Label(spd_labelframe, image=img_logo, borderwidth=0)
-        edr_lbl.image = img_logo
-        edr_lbl.pack(side="top")
+        img_vu = self.VU[str(self.pedal // 10 * 10)]
+        self.vu_lbl = Label(spd_labelframe, image=img_vu, borderwidth=0)
+        self.vu_lbl.image = img_vu
+        self.vu_lbl.pack(anchor='n')
 
-        _time = datetime.now().strftime("%d/%m/%Y\n%H:%M:%S")
-        self.time_lbl = Label(spd_labelframe, text=_time, bg="#212121", fg="white")
-        self.time_lbl.config(font=("fangsongti", 24))
-        self.time_lbl.pack(side='top')
+        self.pad_lbl = Label(spd_labelframe, text="{:>4}%".format(self.pedal), bg="#212121", fg="white")
+        self.pad_lbl.config(font=("fangsongti", 85))
+        self.pad_lbl.pack(anchor='n')
 
         spd_lbl = Label(spd_labelframe, text="{:6.2f}".format(self.speed), bg="#212121", fg="#65dba8")
         spd_lbl.config(font=("fangsongti", 200))
@@ -122,12 +122,12 @@ class Example(Frame):
         sensor_labelframe = LabelFrame(spd_labelframe, borderwidth=0, bg="#212121")
         sensor_labelframe.pack(side='bottom', padx=150)
 
-        img_hall = self.HALL[str(self.hall)]
+        img_hall = self.HALL['0']
         hall_lbl = Label(sensor_labelframe, image=img_hall, borderwidth=0)
         hall_lbl.image = img_hall
         hall_lbl.pack(side="left")
 
-        img_temp = self.TEMP[self.temp]
+        img_temp = self.TEMP['none']
         temp_lbl = Label(sensor_labelframe, image=img_temp, borderwidth=0)
         temp_lbl.image = img_temp
         temp_lbl.pack(side="left")
