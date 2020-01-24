@@ -1,3 +1,6 @@
+import os
+from glob import glob
+from time import sleep
 from datetime import datetime
 
 from PIL import Image, ImageTk
@@ -7,13 +10,51 @@ from tkinter.ttk import Frame, Style
 
 class Example(Frame):
 
-    def __init__(self, width, height):
+    def __init__(self, root, width, height):
         super().__init__()
+
+        self.pedal = 0
+        # self.VU = self.read_vu('images/vu/*.png')
+        self.VU = read_vu('images/vu/*.png')
+
         self.edr_logo_size = (200, 200)
         self.start_btn_size = (200, 100)
+
+        self.root = root
         self.width = width
         self.height = height
         self.initUI()
+
+        self.root.bind('<KeyPress>', self.press)
+        self.root.bind('<KeyRelease>', self.release)
+        self.update_time()
+
+    # def read_vu(self, path, vu_width=300, vu_height=100):
+    #     vu = {}
+    #     for img in glob(path):
+    #         percent = os.path.splitext(os.path.basename(img))[0]
+    #         vu[int(percent)] = self.read_img(img, vu_width, vu_height)
+    #     return vu
+
+    def press(self, event):
+        d = 3
+        if self.pedal < 100:
+            self.pedal += d
+            self.pedal = min(100, self.pedal)
+
+        for i in range(d):
+            img = self.VU[self.pedal // 10 * 10]
+            self.vu_lbl.configure(image=img)
+            self.vu_lbl.image = img
+            self.pad_lbl.configure(text=f'{int(self.pedal)}%')
+
+    def release(self, event):
+        sleep(0.5)
+        self.pedal = 0
+        img = self.VU[self.pedal // 10 * 10]
+        self.vu_lbl.configure(image=img)
+        self.vu_lbl.image = img
+        self.pad_lbl.configure(text=f'{int(self.pedal)}%')
 
     def read_img(self, impath, resize_width=None, resize_height=None):
         img = Image.open(impath)
@@ -22,25 +63,29 @@ class Example(Frame):
         img = ImageTk.PhotoImage(img)
         return img
 
+    def update_time(self):
+        _time = datetime.now().strftime("%d/%m/%Y\n%H:%M:%S")
+        self.time_lbl.configure(text=_time)
+        # schedule timer to call myself after 1 second
+        self.after(1000, self.update_time)
+
     def initUI(self):
         self.master.title("Absolute positioning")
         self.pack(fill=BOTH, expand=1)
         Style().configure("TFrame", background="#212121")
 
-
         vu_width, vu_height = 300, 100
         vu_labelframe = LabelFrame(self, bg="#212121", borderwidth=0)
         vu_labelframe.pack(side="left", anchor='w', fill='y')
 
-        vu_meter = self.read_img("vu/90.png", vu_width, vu_height)
-        vu_lbl = Label(vu_labelframe, image=vu_meter, borderwidth=0)
-        vu_lbl.image = vu_meter
-        vu_lbl.pack(anchor='nw')
+        img_vu = self.VU[self.pedal // 10 *10]
+        self.vu_lbl = Label(vu_labelframe, image=img_vu, borderwidth=0)
+        self.vu_lbl.image = img_vu
+        self.vu_lbl.pack(anchor='nw')
 
-        ped_percent = 90
-        pad_lbl = Label(vu_labelframe, text=f"{ped_percent}%", bg="#212121", fg="white")
-        pad_lbl.config(font=("fangsongti", 85))
-        pad_lbl.pack(anchor='nw')
+        self.pad_lbl = Label(vu_labelframe, text=f"{self.pedal}%", bg="#212121", fg="white")
+        self.pad_lbl.config(font=("fangsongti", 85))
+        self.pad_lbl.pack(anchor='nw')
 
         distance = 16.50
         km_lbl = Label(vu_labelframe, text="KM", bg="#212121", fg="white")
@@ -70,9 +115,9 @@ class Example(Frame):
         edr_lbl.pack(side="top")
 
         _time = datetime.now().strftime("%d/%m/%Y\n%H:%M:%S")
-        time_lbl = Label(spd_labelframe, text=_time, bg="#212121", fg="white")
-        time_lbl.config(font=("fangsongti", 24))
-        time_lbl.pack(side='top')
+        self.time_lbl = Label(spd_labelframe, text=_time, bg="#212121", fg="white")
+        self.time_lbl.config(font=("fangsongti", 24))
+        self.time_lbl.pack(side='top')
 
         speed = 24.15
         spd_lbl = Label(spd_labelframe, text=f"{speed}", bg="#212121", fg="#65dba8")
@@ -107,7 +152,7 @@ class Example(Frame):
         batt_labelframe = LabelFrame(right_labelframe, bg="#212121", borderwidth=0)
         batt_labelframe.pack(side="top", anchor='n', padx=batt_width // 10, pady=batt_height // 5)
 
-        battery = self.read_img("battery_25.png", batt_width, batt_height)
+        battery = self.read_img("images/battery/25.png", batt_width, batt_height)
         battery_lbl = Label(batt_labelframe, image=battery, borderwidth=0)
         battery_lbl.image = battery
         battery_lbl.pack(side='right', anchor='e')
@@ -115,7 +160,7 @@ class Example(Frame):
         batt_lbl.config(font=("fangsongti", 75))
         batt_lbl.pack(side='top', anchor='e', padx=(0, batt_width // 10))
 
-        power = "06:55"
+        power = "106:55"
         pw_lbl = Label(right_labelframe, text=power, bg="#212121", fg="white")
         pw_lbl.config(font=("Lucida Console", 80))
         pw_lbl.pack(side='bottom')
@@ -125,11 +170,9 @@ if __name__ == '__main__':
     root = Tk()
     root.wm_attributes('-fullscreen', 'true')
 
-    width = root.winfo_screenwidth()
-    height = root.winfo_screenheight()
+    width, height = root.winfo_screenwidth(), root.winfo_screenheight()
+    print("width:", width, ", height:", height)
 
-    print(width, height)
-
-    app = Example(width, height)
+    app = Example(root, width, height)
     root.mainloop()
 
