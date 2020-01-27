@@ -18,11 +18,10 @@ def to_time_format(counter):
     return _elapse_time
 
 
-class Example(Frame):
+class EDRMonitor(Frame):
 
     def __init__(self, root, width, height):
         super().__init__()
-
         self.pedal = 0
         self.hall = 0
         self.temp = 0
@@ -32,20 +31,35 @@ class Example(Frame):
         self.distance = 0
         self.batt_percentage = 29
 
-        self.VU = read_icons('images/vu20/*.png', 500, 100)
-        self.BATT = read_icons('images/battery/*.png', 150, 100)
-        self.LOGO = read_icons('images/logo/*.png', 200, 200)
-        self.HALL = read_icons('images/hall/*.png', 150, 150)
-        self.TEMP = read_icons('images/temp/*.png', 150, 150)
+        self.ori_width = 1536
+        self.ori_height = 864
 
-        self.root = root
         self.width = width
         self.height = height
+
+        # self.VU = read_icons('images/vu20/*.png', 500, 100)
+        # self.BATT = read_icons('images/battery/*.png', 150, 100)
+        # self.LOGO = read_icons('images/logo/*.png', 200, 200)
+        # self.HALL = read_icons('images/hall/*.png', 150, 150)
+        # self.TEMP = read_icons('images/temp/*.png', 150, 150)
+        self.VU = read_icons('images/vu20/*.png', self.w(500), self.h(100))
+        self.BATT = read_icons('images/battery/*.png', self.w(150), self.h(100))
+        self.LOGO = read_icons('images/logo/*.png', self.w(200), self.h(200))
+        self.HALL = read_icons('images/hall/*.png', self.w(150), self.h(150))
+        self.TEMP = read_icons('images/temp/*.png', self.w(150), self.h(150))
+
+        self.root = root
         self.initUI()
 
         self.root.bind('<KeyPress>', self.press)
         self.root.bind('<KeyRelease>', self.release)
         self.update_time()
+
+    def w(self, n):
+        return self.width * n / self.ori_width
+
+    def h(self, n):
+        return self.height * n / self.ori_height
 
     def press(self, event):
         self.pedal += 1
@@ -159,11 +173,15 @@ class Example(Frame):
 
 
 if __name__ == '__main__':
+    # init root for diaplau
     root = Tk()
     root.wm_attributes('-fullscreen', 'true')
 
+    # get dimension (width, height) to make it
+    # dynamically - resizing.
     width, height = root.winfo_screenwidth(), root.winfo_screenheight()
     print("width:", width, ", height:", height)
 
-    app = Example(root, width, height)
+    # init the monitor from root.
+    app = EDRMonitor(root, width, height)
     root.mainloop()
