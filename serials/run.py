@@ -56,10 +56,10 @@ class EDRMonitor(Frame):
         self.update_time()
 
     def w(self, n):
-        return self.width * n / self.ori_width
+        return int(self.width * n / self.ori_width)
 
     def h(self, n):
-        return self.height * n / self.ori_height
+        return int(self.height * n / self.ori_height)
 
     def press(self, event):
         self.pedal += 1
