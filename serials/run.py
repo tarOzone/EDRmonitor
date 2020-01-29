@@ -29,19 +29,13 @@ class EDRMonitor(Frame):
         self.power = 0
         self.count = 0
         self.distance = 0
-        self.batt_percentage = 29
+        self.batt_percentage = 100
 
         self.ori_width = 1536
         self.ori_height = 864
-
         self.width = width
         self.height = height
 
-        # self.VU = read_icons('images/vu20/*.png', 500, 100)
-        # self.BATT = read_icons('images/battery/*.png', 150, 100)
-        # self.LOGO = read_icons('images/logo/*.png', 200, 200)
-        # self.HALL = read_icons('images/hall/*.png', 150, 150)
-        # self.TEMP = read_icons('images/temp/*.png', 150, 150)
         self.VU = read_icons('images/vu20/*.png', self.w(500), self.h(100))
         self.BATT = read_icons('images/battery/*.png', self.w(150), self.h(100))
         self.LOGO = read_icons('images/logo/*.png', self.w(200), self.h(200))
@@ -121,14 +115,14 @@ class EDRMonitor(Frame):
 
         self._init_image_label(vu_labelframe, self.LOGO['edr']).pack(anchor="n")
 
-        self.time_lbl = self._init_text_label(vu_labelframe, get_datetime(), 45)
+        self.time_lbl = self._init_text_label(vu_labelframe, get_datetime(), self.h(45))
         self.time_lbl.pack(side='top')
 
-        self.dist_lbl = self._init_text_label(vu_labelframe, "{:5.2f} KM".format(self.distance), 85)
+        self.dist_lbl = self._init_text_label(vu_labelframe, "{:5.2f} KM".format(self.distance), self.h(85))
         self.dist_lbl.pack(side='bottom', anchor="s")
 
-        self.pw_lbl = self._init_text_label(vu_labelframe, "{:04d} KW".format(self.power), 75)
-        self.pw_lbl.pack(side='bottom', anchor="s", pady=50)
+        self.pw_lbl = self._init_text_label(vu_labelframe, "{:04d} KW".format(self.power), self.h(75))
+        self.pw_lbl.pack(side='bottom', anchor="s", pady=self.h(50))
 
         # =============================================================
 
@@ -137,15 +131,15 @@ class EDRMonitor(Frame):
 
         self.vu_lbl = self._init_image_label(spd_labelframe, self.VU['0'])
         self.vu_lbl.pack(anchor='n')
-        self.pad_lbl = self._init_text_label(spd_labelframe, "{:>4}%".format(0), 85)
+        self.pad_lbl = self._init_text_label(spd_labelframe, "{:>4}%".format(0), self.h(85))
         self.pad_lbl.pack(anchor='n')
 
-        self.spd_lbl = self._init_text_label(spd_labelframe, "{:4.2f}".format(0), 200, fg="#65dba8")
+        self.spd_lbl = self._init_text_label(spd_labelframe, "{:4.2f}".format(0), self.h(200), fg="#65dba8")
         self.spd_lbl.pack(side='top')
-        self._init_text_label(spd_labelframe, "Km/hr", 64, fg="#65dba8").pack(side='top')
+        self._init_text_label(spd_labelframe, "Km/hr", self.h(64), fg="#65dba8").pack(side='top')
 
         sensor_labelframe = LabelFrame(spd_labelframe, borderwidth=0, bg="#212121")
-        sensor_labelframe.pack(side='bottom', padx=150)
+        sensor_labelframe.pack(side='bottom', padx=self.h(150))
 
         self.hall_lbl = self._init_image_label(sensor_labelframe, self.HALL['0'])
         self.hall_lbl.pack(side="left")
@@ -165,10 +159,10 @@ class EDRMonitor(Frame):
         self.battery_img = self._init_image_label(batt_labelframe, self.BATT[str(batt_per)])
         self.battery_img.pack(side='right', anchor='e')
 
-        self.battery_lbl = self._init_text_label(batt_labelframe, "{:>4}%".format(self.batt_percentage), 65)
-        self.battery_lbl.pack(side='top', anchor='e', padx=(0, 50))
+        self.battery_lbl = self._init_text_label(batt_labelframe, "{:>4}%".format(self.batt_percentage), self.h(65))
+        self.battery_lbl.pack(side='top', anchor='e', padx=(0, self.h(50)))
 
-        self.elapse_lbl = self._init_text_label(right_labelframe, to_time_format(self.count), 80)
+        self.elapse_lbl = self._init_text_label(right_labelframe, to_time_format(self.count), self.h(80))
         self.elapse_lbl.pack(side='bottom')
 
 
