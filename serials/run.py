@@ -1,9 +1,7 @@
 from time import sleep
 from datetime import datetime
-
 from tkinter import Tk, BOTH, LabelFrame, Label
 from tkinter.ttk import Frame, Style
-
 from image_util import read_icons
 
 

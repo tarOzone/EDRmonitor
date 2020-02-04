@@ -1,8 +1,9 @@
 import csv
 import json
 from time import sleep
-from serial import Serial
 from datetime import datetime
+
+from serial import Serial
 from serial.serialutil import SerialException, SerialTimeoutException
 
 
@@ -21,30 +22,46 @@ class SerialArduino:
     def __init__(self, port, baud_rate, csv_columns):
         self.port = port
         self.baud_rate = baud_rate
-        self.ser = None
+        self.connecting = False
         self.serial_lists = []
         self.csv_columns = csv_columns
-        # connect to the arduino according to the port
-        self.connect()
+
+        self.curr_status = False
+        self.prev_status = False
+
+    # connect to the arduino according to the port
+    def connect(self):
+        while not self.connect_serial():
+            sleep(1)
+        self.connecting = True
+        print("[SUCCESS] Connection DONE!!!")
+
+    def run(self):
+        if self.connecting:
+            while True:
+                line = ser.readline()
+                if self.curr_status:
+                    print(line)
+                    if not self.prev_status:
+                        self.serial_lists.clear()
+                    self.serial_lists.append(line)
+                else:
+                    if self.prev_status:
+                        self.export_csv()
+                self.prev_status = self.curr_status
 
     def readline(self):
         try:
             line = self.ser.readline()
             line = line.decode('utf-8').rstrip()
             line = json.loads(line)
-            self.serial_lists.append(line)
+            self.curr_status = line['status']
             return line
-        except Exception as e:
+        except json.JSONDecodeError:
             return {}
-
-    def connect(self):
-        count = 0
-        while not self.connect_serial():
-            sleep(1)
-            count += 1
-            if count >= 10:
-                raise SerialTimeoutException("Arduino port not found!")
-        print("[SUCCESS] Connection DONE!!!")
+        except SerialException as e:
+            self.close()
+            self.connecting = False
 
     def connect_serial(self):
         try:
@@ -53,32 +70,38 @@ class SerialArduino:
         except SerialException:
             return False
 
+    def rectify(self, data, offset):
+        elapsed_time = offset.get('elapsed_time', 0.0)
+        total_distance = offset.get('total_distance', 0.0)
+        data['elapsed_time'] -= elapsed_time
+        data['total_distance'] -= total_distance
+
     def export_csv(self):
         csv_filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         with open(f'{csv_filename}.csv', 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.csv_columns)
             writer.writeheader()
+            offset = self.serial_lists[0].copy()
             for data in self.serial_lists:
+                data.pop('status', None)
+                self.rectify(data, offset)
                 writer.writerow(data)
+        print(f"[INFO] {csv_filename} has been saved.")
 
-    def __del__(self):
-        print("CLOSING...")
+    def close(self):
         try:
+            print("CLOSING...")
             self.ser.close()
-            self.export_csv()
+            self.connecting = False
         except AttributeError:
             pass
         
 
 if __name__ == "__main__":
     port, columns, baud_rate = read_config("config.json")
-    try:
-        ser = SerialArduino(port, baud_rate, columns)
-        for i in range(50):
-            line = ser.readline()
-            print(line)
-    finally:
-        try:
-            del ser
-        except NameError:
-            pass
+    ser = SerialArduino(port, baud_rate, columns)
+    while True:
+        ser.connect()
+        print("============================= CONNECTED ===============================")
+        ser.run()
+        print("============================ DISCONNECTED =============================")
