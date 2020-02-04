@@ -39,7 +39,7 @@ class SerialArduino:
     def run(self):
         if self.connecting:
             while True:
-                line = ser.readline()
+                line = self.ser.readline()
                 if self.curr_status:
                     print(line)
                     if not self.prev_status:

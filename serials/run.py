@@ -2,7 +2,9 @@ from time import sleep
 from datetime import datetime
 from tkinter import Tk, BOTH, LabelFrame, Label
 from tkinter.ttk import Frame, Style
+
 from image_util import read_icons
+from serial_reader import SerialArduino, read_config
 
 
 def get_datetime(sep="\n"):
@@ -46,6 +48,27 @@ class EDRMonitor(Frame):
         self.root.bind('<KeyPress>', self.press)
         self.root.bind('<KeyRelease>', self.release)
         self.update_time()
+
+        port, columns, baud_rate = read_config("config.json")
+        self.ser = SerialArduino(port, baud_rate, columns)
+        self.update_sensor()
+
+    def update_sensor(self):
+        if not self.ser.connecting:
+            self.ser.connect()
+
+        line = self.ser.readline()
+        if self.ser.curr_status:
+            speed = line.get('speed', 0)
+            self.spd_lbl.config(text="{:4.2f}".format(speed))
+            if not self.ser.prev_status:
+                self.ser.serial_lists.clear()
+            self.ser.serial_lists.append(line)
+        else:
+            if self.ser.prev_status:
+                self.ser.export_csv()
+        self.ser.prev_status = self.ser.curr_status
+        self.after(1, self.update_sensor)
 
     def w(self, n):
         return int(self.width * n / self.ori_width)
