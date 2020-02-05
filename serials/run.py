@@ -52,25 +52,24 @@ class EDRMonitor(Frame):
     def update_sensor(self):
         if not self.ser.connecting:
             self.ser.connect()
-
-        # line = self.ser.readline()
-        # if self.ser.curr_status:
-        #     speed = line.get('speed', 0)
-        #     self.spd_lbl.config(text="{:4.2f}".format(speed))
-        #     if not self.ser.prev_status:
-        #         self.ser.serial_lists.clear()
-        #     self.ser.serial_lists.append(line)
-        # else:
-        #     if self.ser.prev_status:
-        #         self.ser.export_csv()
-        # self.ser.prev_status = self.ser.curr_status
+        line = self.ser.readline()
+        if self.ser.curr_status:
+            speed = line.get('speed', 0)
+            self.spd_lbl.config(text="{:4.2f}".format(speed))
+            if not self.ser.prev_status:
+                self.ser.serial_lists.clear()
+            self.ser.serial_lists.append(line)
+        else:
+            if self.ser.prev_status:
+                self.ser.export_csv()
+        self.ser.prev_status = self.ser.curr_status
         self.after(1, self.update_sensor)
 
     def w(self, n):
-        return int(self.width * n / self.ori_width)
+        return int(self.width * n / self.ori_width / 1.1)
 
     def h(self, n):
-        return int(self.height * n / self.ori_height)
+        return int(self.height * n / self.ori_height / 1.1)
 
     def map_vu_meter(self, speed):
         large_div, small_div = 10, 5
