@@ -1,5 +1,5 @@
 {
-  "port": "COM14",
+  "port": "ttyACM0",
   "baud_rate": 9600,
   "columns": [
     "elapsed_time",
