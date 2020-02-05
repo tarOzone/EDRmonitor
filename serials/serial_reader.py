@@ -1,6 +1,7 @@
 import csv
 import json
 from time import sleep
+from sys import platform
 from datetime import datetime
 
 from serial import Serial
@@ -11,7 +12,12 @@ def read_config(config_file):
     with open(config_file, "r") as f:
         content = f.read()
     json_content = json.loads(content)
-    port = json_content["port"]
+
+    if platform == "linux" or platform == "linux2":
+        port = json_content["port_linux"]
+    elif platform == "win32":
+        port = json_content["port_windows"]
+
     columns = json_content["columns"]
     baud_rate = json_content["baud_rate"]
     return port, columns, baud_rate

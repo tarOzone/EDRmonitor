@@ -1,5 +1,6 @@
 {
-  "port": "/dev/ttyACM0",
+  "port_windows": "COM14",
+  "port_linux": "/dev/ttyACM0",
   "baud_rate": 9600,
   "columns": [
     "elapsed_time",

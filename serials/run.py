@@ -21,6 +21,7 @@ def to_time_format(counter):
 class EDRMonitor(Frame):
     def __init__(self, root, width, height):
         super().__init__()
+
         self.hall = 0
         self.temp = 0
         self.speed = 0
@@ -53,6 +54,7 @@ class EDRMonitor(Frame):
         if not self.ser.connecting:
             self.ser.connect()
         line = self.ser.readline()
+        print(line)
         if self.ser.curr_status:
             speed = line.get('speed', 0)
             self.spd_lbl.config(text="{:4.2f}".format(speed))
@@ -63,7 +65,7 @@ class EDRMonitor(Frame):
             if self.ser.prev_status:
                 self.ser.export_csv()
         self.ser.prev_status = self.ser.curr_status
-        self.after(1, self.update_sensor)
+        self.after(200, self.update_sensor)
 
     def w(self, n):
         return int(self.width * n / self.ori_width / 1.1)
@@ -83,26 +85,23 @@ class EDRMonitor(Frame):
         self.vu_lbl.image = vu_img
         self.pad_lbl.configure(text='{:>4}%'.format(speed))
 
-    def map_bett_percent(self, percent):
+    def map_batt_percent(self, percent):
         val, rem = divmod(percent, 25)
         offset = 1 if rem != 0 else 0
         return (val + offset) * 25
 
     def update_batt(self, percent):
-        batt_val = self.map_bett_percent(percent)
+        batt_val = self.map_batt_percent(percent)
         batt_img = self.BATT[str(batt_val)]
         self.battery_img.configure(image=batt_img)
         self.battery_img.image = batt_img
         self.battery_lbl.configure(text="{:>4}%".format(percent))
 
     def update_time(self):
-        self._update_time()
-        self.after(1000, self.update_time)
-
-    def _update_time(self):
         self.count += 1
         self.time_lbl.configure(text=get_datetime())
         self.elapse_lbl.config(text=to_time_format(self.count))
+        self.after(1000, self.update_time)
 
     def _init_image_label(self, parent, image):
         lbl = Label(parent, image=image, borderwidth=0)
