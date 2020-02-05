@@ -67,7 +67,7 @@ class SerialArduino:
         try:
             self.ser = Serial(self.port, self.baud_rate)
             return True
-        except SerialException:
+        except SerialException as e:
             return False
 
     def rectify(self, data, offset):

@@ -19,10 +19,8 @@ def to_time_format(counter):
 
 
 class EDRMonitor(Frame):
-
     def __init__(self, root, width, height):
         super().__init__()
-        self.pedal = 0
         self.hall = 0
         self.temp = 0
         self.speed = 0
@@ -45,8 +43,6 @@ class EDRMonitor(Frame):
         self.root = root
         self.initUI()
 
-        self.root.bind('<KeyPress>', self.press)
-        self.root.bind('<KeyRelease>', self.release)
         self.update_time()
 
         port, columns, baud_rate = read_config("config.json")
@@ -57,17 +53,17 @@ class EDRMonitor(Frame):
         if not self.ser.connecting:
             self.ser.connect()
 
-        line = self.ser.readline()
-        if self.ser.curr_status:
-            speed = line.get('speed', 0)
-            self.spd_lbl.config(text="{:4.2f}".format(speed))
-            if not self.ser.prev_status:
-                self.ser.serial_lists.clear()
-            self.ser.serial_lists.append(line)
-        else:
-            if self.ser.prev_status:
-                self.ser.export_csv()
-        self.ser.prev_status = self.ser.curr_status
+        # line = self.ser.readline()
+        # if self.ser.curr_status:
+        #     speed = line.get('speed', 0)
+        #     self.spd_lbl.config(text="{:4.2f}".format(speed))
+        #     if not self.ser.prev_status:
+        #         self.ser.serial_lists.clear()
+        #     self.ser.serial_lists.append(line)
+        # else:
+        #     if self.ser.prev_status:
+        #         self.ser.export_csv()
+        # self.ser.prev_status = self.ser.curr_status
         self.after(1, self.update_sensor)
 
     def w(self, n):
@@ -75,16 +71,6 @@ class EDRMonitor(Frame):
 
     def h(self, n):
         return int(self.height * n / self.ori_height)
-
-    def press(self, event):
-        self.pedal += 1
-        self.pedal = min(100, max(0, self.pedal))
-        self.update_vu(self.pedal)
-
-    def release(self, event):
-        sleep(0.5)
-        self.pedal = 0
-        self.update_vu(0)
 
     def map_vu_meter(self, speed):
         large_div, small_div = 10, 5
@@ -111,10 +97,13 @@ class EDRMonitor(Frame):
         self.battery_lbl.configure(text="{:>4}%".format(percent))
 
     def update_time(self):
+        self._update_time()
+        self.after(1000, self.update_time)
+
+    def _update_time(self):
         self.count += 1
         self.time_lbl.configure(text=get_datetime())
         self.elapse_lbl.config(text=to_time_format(self.count))
-        self.after(1000, self.update_time)
 
     def _init_image_label(self, parent, image):
         lbl = Label(parent, image=image, borderwidth=0)
