@@ -2,6 +2,7 @@ from time import sleep
 from tkinter import Tk, BOTH, LabelFrame, Label
 from tkinter.ttk import Frame, Style
 
+from serial_log import export_csv
 from time_utils import to_datetime_format, get_datetime_split, get_datetime, get_diff_time
 from image_util import read_icons
 from serial_reader import SerialArduino, read_config
@@ -30,24 +31,24 @@ class EDRMonitor(Frame):
 
         self.init_datetime = to_datetime_format(get_datetime_split())
         self.total_distance = 0
+        self.records = []
 
         self.root = root
         self.initUI()
 
         self.update_time()
 
-        # self.records =
         port, columns, baud_rate = read_config("config.json")
         self.ser = SerialArduino(port, baud_rate, columns)
         self.ser.connect()
         self.update_sensor()
 
     def update_sensor(self):
-        line = self.ser.run()
-
+        line = self.ser.readline()
         if line is None:
             print("[Error] Disconnected")
             self.init_datetime = to_datetime_format(get_datetime_split())
+            self.total_distance = 0
             self.ser.connect()
             print("[Error] Reconnected!")
         elif line == {}:
@@ -55,16 +56,27 @@ class EDRMonitor(Frame):
         else:
             status = line.get('status', False)
             speed = line.get('speed', 0.)
-
             distance = line.get('distance', 0.)
+
+            if status:
+                self.records.append(line)
+            else:
+                if len(self.records) != 0:
+                    export_csv(self.records, self.ser.csv_columns)
+                    self.records.clear()
+
+            hall_img = self.HALL['0' if not status else '1']
+            self.update_img(self.hall_lbl, hall_img)
+
             self.total_distance += distance
-
-            print(f"[{get_datetime(sep=' ')}]", "total distance:", self.total_distance, ":", status)
-
             self.spd_lbl.config(text="{:4.2f}".format(speed))
             self.dist_lbl.config(text="{:5.2f} KM".format(self.total_distance))
 
         self.after(1, self.update_sensor)
+
+    def update_img(self, img_lbl, img):
+        img_lbl.configure(image=img)
+        img_lbl.image = img
 
     def w(self, n):
         return int(self.width * n / self.ori_width / 1.09)

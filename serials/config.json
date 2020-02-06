@@ -11,6 +11,6 @@
     "longitude",
     "altitude",
     "speed",
-    "total_distance"
+    "distance"
   ]
 }
