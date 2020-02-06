@@ -25,10 +25,11 @@ def read_config(config_file):
 
 class SerialArduino:
 
-    def __init__(self, port, baud_rate, csv_columns):
+    def __init__(self, port, baud_rate, csv_columns, timeout=1):
         self.port = port
         self.baud_rate = baud_rate
         self.connecting = False
+        self.timeout = timeout
         self.serial_lists = []
         self.csv_columns = csv_columns
 
@@ -42,36 +43,44 @@ class SerialArduino:
         self.connecting = True
         print("[SUCCESS] Connection DONE!!!")
 
+    def start(self):
+        print("Started!")
+        while True:
+            line = self.run()
+            print(line)
+            if line == {}:
+                break
+        print("End")
+
     def run(self):
-        if self.connecting:
-            while True:
-                line = self.ser.readline()
-                if self.curr_status:
-                    print(line)
-                    if not self.prev_status:
-                        self.serial_lists.clear()
-                    self.serial_lists.append(line)
-                else:
-                    if self.prev_status:
-                        self.export_csv()
-                self.prev_status = self.curr_status
+        # dt = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        line = self.readline()
+        # if self.curr_status:
+        #     print(line)
+        #     if not self.prev_status:
+        #         self.serial_lists.clear()
+        #     self.serial_lists.append(line)
+        # else:
+        #     if self.prev_status:
+        #         self.export_csv()
+        # self.prev_status = self.curr_status
+        return line
 
     def readline(self):
         try:
             line = self.ser.readline()
             line = line.decode('utf-8').rstrip()
             line = json.loads(line)
-            self.curr_status = line['status']
             return line
-        except json.JSONDecodeError:
+        except json.decoder.JSONDecodeError as e:
             return {}
         except SerialException as e:
-            self.close()
-            self.connecting = False
+            return None
+        #     self.close()
 
     def connect_serial(self):
         try:
-            self.ser = Serial(self.port, self.baud_rate)
+            self.ser = Serial(self.port, self.baud_rate, timeout=self.timeout)
             return True
         except SerialException:
             return False
@@ -84,15 +93,18 @@ class SerialArduino:
 
     def export_csv(self):
         csv_filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        with open(f'{csv_filename}.csv', 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=self.csv_columns)
-            writer.writeheader()
-            offset = self.serial_lists[0].copy()
-            for data in self.serial_lists:
-                data.pop('status', None)
-                self.rectify(data, offset)
-                writer.writerow(data)
-        print(f"[INFO] {csv_filename} has been saved.")
+        try:
+            with open(f'{csv_filename}.csv', 'w', newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=self.csv_columns)
+                writer.writeheader()
+                offset = self.serial_lists[0].copy()
+                for data in self.serial_lists:
+                    data.pop('status', None)
+                    self.rectify(data, offset)
+                    writer.writerow(data)
+            print(f"[INFO] {csv_filename} has been saved.")
+        except Exception:
+            return
 
     def close(self):
         try:
@@ -105,9 +117,8 @@ class SerialArduino:
 
 if __name__ == "__main__":
     port, columns, baud_rate = read_config("config.json")
-    ser = SerialArduino(port, baud_rate, columns)
+    ser = SerialArduino(port, baud_rate, columns, 5)
+    ser.connect()
     while True:
-        ser.connect()
-        print("============================= CONNECTED ===============================")
-        ser.run()
-        print("============================ DISCONNECTED =============================")
+        print("================================")
+        ser.start()

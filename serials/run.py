@@ -1,21 +1,10 @@
 from time import sleep
-from datetime import datetime
 from tkinter import Tk, BOTH, LabelFrame, Label
 from tkinter.ttk import Frame, Style
 
+from time_utils import to_datetime_format, get_datetime_split, get_datetime, get_diff_time
 from image_util import read_icons
 from serial_reader import SerialArduino, read_config
-
-
-def get_datetime(sep="\n"):
-    return datetime.now().strftime(f"%d/%m/%Y{sep}%H:%M:%S")
-
-
-def to_time_format(counter):
-    hour, remaining = divmod(counter, 3600)
-    minutes, seconds = divmod(remaining, 60)
-    _elapse_time = "{:02d}:{:02d}".format(int(minutes), int(seconds))
-    return _elapse_time
 
 
 class EDRMonitor(Frame):
@@ -26,8 +15,6 @@ class EDRMonitor(Frame):
         self.temp = 0
         self.speed = 0
         self.power = 0
-        self.count = 0
-        self.distance = 0
         self.batt_percentage = 100
 
         self.ori_width = 1536
@@ -41,37 +28,49 @@ class EDRMonitor(Frame):
         self.HALL = read_icons('images/hall/*.png', self.w(150), self.h(150))
         self.TEMP = read_icons('images/temp/*.png', self.w(150), self.h(150))
 
+        self.init_datetime = to_datetime_format(get_datetime_split())
+        self.total_distance = 0
+
         self.root = root
         self.initUI()
 
         self.update_time()
 
+        # self.records =
         port, columns, baud_rate = read_config("config.json")
         self.ser = SerialArduino(port, baud_rate, columns)
+        self.ser.connect()
         self.update_sensor()
 
     def update_sensor(self):
-        if not self.ser.connecting:
+        line = self.ser.run()
+
+        if line is None:
+            print("[Error] Disconnected")
+            self.init_datetime = to_datetime_format(get_datetime_split())
             self.ser.connect()
-        line = self.ser.readline()
-        print(line)
-        if self.ser.curr_status:
-            speed = line.get('speed', 0)
-            self.spd_lbl.config(text="{:4.2f}".format(speed))
-            if not self.ser.prev_status:
-                self.ser.serial_lists.clear()
-            self.ser.serial_lists.append(line)
+            print("[Error] Reconnected!")
+        elif line == {}:
+            print("**", line)
         else:
-            if self.ser.prev_status:
-                self.ser.export_csv()
-        self.ser.prev_status = self.ser.curr_status
-        self.after(200, self.update_sensor)
+            status = line.get('status', False)
+            speed = line.get('speed', 0.)
+
+            distance = line.get('distance', 0.)
+            self.total_distance += distance
+
+            print(f"[{get_datetime(sep=' ')}]", "total distance:", self.total_distance, ":", status)
+
+            self.spd_lbl.config(text="{:4.2f}".format(speed))
+            self.dist_lbl.config(text="{:5.2f} KM".format(self.total_distance))
+
+        self.after(1, self.update_sensor)
 
     def w(self, n):
-        return int(self.width * n / self.ori_width / 1.1)
+        return int(self.width * n / self.ori_width / 1.09)
 
     def h(self, n):
-        return int(self.height * n / self.ori_height / 1.1)
+        return int(self.height * n / self.ori_height / 1.09)
 
     def map_vu_meter(self, speed):
         large_div, small_div = 10, 5
@@ -98,9 +97,11 @@ class EDRMonitor(Frame):
         self.battery_lbl.configure(text="{:>4}%".format(percent))
 
     def update_time(self):
-        self.count += 1
-        self.time_lbl.configure(text=get_datetime())
-        self.elapse_lbl.config(text=to_time_format(self.count))
+        self.time_lbl.config(text=get_datetime())
+        self.elapse_lbl.config(text=get_diff_time(
+            self.init_datetime,
+            to_datetime_format(get_datetime_split())
+        ))
         self.after(1000, self.update_time)
 
     def _init_image_label(self, parent, image):
@@ -126,7 +127,7 @@ class EDRMonitor(Frame):
         self.time_lbl = self._init_text_label(vu_labelframe, get_datetime(), self.h(45))
         self.time_lbl.pack(side='top')
 
-        self.dist_lbl = self._init_text_label(vu_labelframe, "{:5.2f} KM".format(self.distance), self.h(85))
+        self.dist_lbl = self._init_text_label(vu_labelframe, "{:5.2f} KM".format(self.total_distance), self.h(85))
         self.dist_lbl.pack(side='bottom', anchor="s")
 
         self.pw_lbl = self._init_text_label(vu_labelframe, "{:04d} KW".format(self.power), self.h(75))
@@ -170,7 +171,7 @@ class EDRMonitor(Frame):
         self.battery_lbl = self._init_text_label(batt_labelframe, "{:>4}%".format(self.batt_percentage), self.h(65))
         self.battery_lbl.pack(side='top', anchor='e', padx=(0, self.h(50)))
 
-        self.elapse_lbl = self._init_text_label(right_labelframe, to_time_format(self.count), self.h(80))
+        self.elapse_lbl = self._init_text_label(right_labelframe, self.init_datetime, self.h(80))
         self.elapse_lbl.pack(side='bottom')
 
 
