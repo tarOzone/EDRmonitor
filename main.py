@@ -34,9 +34,11 @@ class EDRMonitor(Frame):
 
         self.root = root
         self.initUI()
-
         self.update_time()
 
+        self.init_connection()
+
+    def init_connection(self):
         port, columns, baud_rate = read_config("./config.json")
         self.ser = SerialArduino(port, baud_rate, columns)
         self.ser.connect()
