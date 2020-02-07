@@ -1,9 +1,8 @@
 import json
 from time import sleep
 from sys import platform
-
 from serial import Serial
-from serial.serialutil import SerialException, SerialTimeoutException
+from serial.serialutil import SerialException
 
 
 def read_config(config_file):
@@ -26,30 +25,15 @@ class SerialArduino:
     def __init__(self, port, baud_rate, csv_columns, timeout=0.5):
         self.port = port
         self.baud_rate = baud_rate
-        self.connecting = False
         self.timeout = timeout
         self.serial_lists = []
         self.csv_columns = csv_columns
-
-        self.curr_status = False
-        self.prev_status = False
 
     # connect to the arduino according to the port
     def connect(self):
         while not self.connect_serial():
             sleep(1)
-        self.connecting = True
         print("[SUCCESS] Connection DONE!!!")
-
-    def start(self):
-        print("Started!")
-        while True:
-            line = self.run()
-            print(line)
-            if line == {}:
-                break
-        print("End")
-
 
     def readline(self):
         try:
@@ -57,11 +41,9 @@ class SerialArduino:
             line = line.decode('utf-8').rstrip()
             line = json.loads(line)
             return line
-        except json.decoder.JSONDecodeError as e:
-            # print("[JSONDecodeError]", e)
+        except json.decoder.JSONDecodeError:
             return {}
-        except SerialException as e:
-            # print("[SerialException]", e)
+        except SerialException:
             return None
 
     def connect_serial(self):
@@ -72,18 +54,4 @@ class SerialArduino:
             return False
 
     def close(self):
-        try:
-            print("CLOSING...")
-            self.ser.close()
-            self.connecting = False
-        except AttributeError:
-            pass
-        
-
-if __name__ == "__main__":
-    port, columns, baud_rate = read_config("config.json")
-    ser = SerialArduino(port, baud_rate, columns, 5)
-    ser.connect()
-    while True:
-        print("================================")
-        ser.start()
+        self.ser.close()
