@@ -9,7 +9,9 @@ from utils.image_util import read_icons
 from serials.serial_log import export_csv
 from serials.serial_reader import SerialArduino, read_config
 
+from serials.sensor_updates import update_hall, update_temp
 from serials.sensor_updates import update_battery, update_speedometer
+from serials.sensor_updates import update_speed, update_power, update_distance
 
 
 URL = "https://httpbin.org/get"
@@ -18,19 +20,15 @@ URL = "https://httpbin.org/get"
 class EDRMonitor(Frame):
     def __init__(self, root, width, height):
         super().__init__()
-
-        self.hall = 0
-        self.temp = 0
-        self.speed = 0
-        self.power = 0
-
-        self.speedometer_percentage = -50
-        self.batt_percentage = 100
-
         self.ori_width = 1536
         self.ori_height = 864
         self.width = width
         self.height = height
+
+        self.hall = 0
+        self.temp = 0
+        self.batt_percentage = 100
+        self.speedometer_percentage = 0
 
         self.VU = read_icons('./images/vu20/*.png', self.w(500), self.h(100))
         self.BATT = read_icons('./images/battery/*.png', self.w(150), self.h(100))
@@ -39,14 +37,13 @@ class EDRMonitor(Frame):
         self.TEMP = read_icons('./images/temp/*.png', self.w(150), self.h(150))
 
         self.init_datetime = to_datetime_format(get_datetime_split())
+        self.total_power = 0
         self.total_distance = 0
         self.records = []
 
         self.root = root
         self.initUI()
         self.update_time()
-
-        self.demo()
 
         # self.init_connection()
 
@@ -55,13 +52,6 @@ class EDRMonitor(Frame):
         self.ser = SerialArduino(port, baud_rate, columns)
         self.ser.connect()
         self.update_sensor()
-
-    def demo(self):
-        '''
-        DEMO IS HERE
-        :return: None
-        '''
-        self.after(100, self.demo)
 
     def update_sensor(self):
         line = self.ser.readline()
@@ -72,7 +62,7 @@ class EDRMonitor(Frame):
             self.ser.connect()
             print("[Error] Reconnected!")
         elif line == {}:
-            print("**", line)
+            print("......")
         else:
             status = line.get('status', False)
             speed = line.get('speed', 0.)
@@ -85,12 +75,11 @@ class EDRMonitor(Frame):
                     export_csv(self.records, self.ser.csv_columns, save_path="logs")
                     self.records.clear()
 
-            hall_img = self.HALL['0' if not status else '1']
-            self.update_img(self.hall_lbl, hall_img)
-
+            update_hall(self.hall_lbl, status, self.HALL)
+            update_speed(self.spd_lbl, speed)
+            update_speed(self.dist_lbl, self.total_distance)
             self.total_distance += distance
-            self.spd_lbl.config(text="{:4.2f}".format(speed))
-            self.dist_lbl.config(text="{:5.2f} KM".format(self.total_distance))
+
         self.after(1, self.update_sensor)
 
     def update_sensor_rest(self):
@@ -104,46 +93,15 @@ class EDRMonitor(Frame):
         t.start()
         self.after(1000, self.update_sensor_rest)
 
-    def update_img(self, img_lbl, img):
-        img_lbl.configure(image=img)
-        img_lbl.image = img
-
     def w(self, n):
         return int(self.width * n / self.ori_width / 1.09)
 
     def h(self, n):
         return int(self.height * n / self.ori_height / 1.09)
 
-    # def map_vu_meter(self, speed):
-    #     large_div, small_div = 10, 5
-    #     val, rem = divmod(speed, large_div)
-    #     return (val * large_div) + (rem // small_div * small_div)
-    #
-    # def update_vu(self, speed):
-    #     vu_val = self.map_vu_meter(speed)
-    #     vu_img = self.VU[str(vu_val)]
-    #     self.vu_lbl.configure(image=vu_img)
-    #     self.vu_lbl.image = vu_img
-    #     self.pad_lbl.configure(text='{:>4}%'.format(speed))
-    #
-    # def map_batt_percent(self, percent):
-    #     val, rem = divmod(percent, 25)
-    #     offset = 1 if rem != 0 else 0
-    #     return (val + offset) * 25
-    #
-    # def update_batt(self, percent):
-    #     batt_val = self.map_batt_percent(percent)
-    #     batt_img = self.BATT[str(batt_val)]
-    #     self.battery_img.configure(image=batt_img)
-    #     self.battery_img.image = batt_img
-    #     self.battery_lbl.configure(text="{:>4}%".format(percent))
-
     def update_time(self):
         self.time_lbl.config(text=get_datetime())
-        self.elapse_lbl.config(text=get_diff_time(
-            self.init_datetime,
-            to_datetime_format(get_datetime_split())
-        ))
+        self.elapse_lbl.config(text=get_diff_time(self.init_datetime, to_datetime_format(get_datetime_split())))
         self.after(1000, self.update_time)
 
     def _init_image_label(self, parent, image):
@@ -168,7 +126,7 @@ class EDRMonitor(Frame):
         self.time_lbl.pack(side='top')
         self.dist_lbl = self._init_text_label(vu_labelframe, "{:5.2f} KM".format(self.total_distance), self.h(85))
         self.dist_lbl.pack(side='bottom', anchor="s")
-        self.pw_lbl = self._init_text_label(vu_labelframe, "{:04d} KW".format(self.power), self.h(75))
+        self.pw_lbl = self._init_text_label(vu_labelframe, "{:04d} KW".format(self.total_power), self.h(75))
         self.pw_lbl.pack(side='bottom', anchor="s", pady=self.h(50))
 
         spd_labelframe = LabelFrame(self, borderwidth=0, bg="#212121")
@@ -203,7 +161,7 @@ class EDRMonitor(Frame):
 
 
 if __name__ == '__main__':
-    # init root for diaplau
+    # init root for display
     root = Tk()
     root.wm_attributes('-fullscreen', 'true')
 
