@@ -14,7 +14,7 @@ from serials.sensor_updates import update_battery, update_speedometer
 from serials.sensor_updates import update_speed, update_power, update_distance
 
 
-URL = "https://httpbin.org/get"
+URL = "https://edrmonitor.sutrithip.com/"
 
 
 class EDRMonitor(Frame):
@@ -45,7 +45,8 @@ class EDRMonitor(Frame):
         self.initUI()
         self.update_time()
 
-        # self.init_connection()
+        # self.update_sensor_rest()
+        self.init_connection()
 
     def init_connection(self):
         port, columns, baud_rate = read_config("./config.json")
@@ -53,20 +54,26 @@ class EDRMonitor(Frame):
         self.ser.connect()
         self.update_sensor()
 
+    def read_sensors(self, line):
+        status = line.get('status', False)
+        speed = line.get('speed', 0.)
+        distance = line.get('distance', 0.)
+        power = line.get('power', 0)
+        return speed, status, power, distance
+
     def update_sensor(self):
         line = self.ser.readline()
         if line is None:
             print("[Error] Disconnected")
             self.init_datetime = to_datetime_format(get_datetime_split())
+            self.total_power = 0
             self.total_distance = 0
             self.ser.connect()
             print("[Error] Reconnected!")
         elif line == {}:
             print("......")
         else:
-            status = line.get('status', False)
-            speed = line.get('speed', 0.)
-            distance = line.get('distance', 0.)
+            speed, status, power, distance = self.read_sensors(line)
 
             if status:
                 self.records.append(line)
@@ -75,10 +82,14 @@ class EDRMonitor(Frame):
                     export_csv(self.records, self.ser.csv_columns, save_path="logs")
                     self.records.clear()
 
+            self.total_power += power
+            self.total_distance += distance
+
+            # update hall, speed, power, and distance
             update_hall(self.hall_lbl, status, self.HALL)
             update_speed(self.spd_lbl, speed)
-            update_speed(self.dist_lbl, self.total_distance)
-            self.total_distance += distance
+            update_power(self.pw_lbl, self.total_power)
+            update_distance(self.dist_lbl, self.total_distance)
 
         self.after(1, self.update_sensor)
 
@@ -86,7 +97,7 @@ class EDRMonitor(Frame):
         def sent_request():
             response = requests.get(URL)
             if response.status_code == 200:
-                a = response.json()
+                a = response.text
                 print(a)
 
         t = threading.Thread(target=sent_request)
