@@ -1,10 +1,18 @@
-from tkinter import Tk, BOTH, LabelFrame, Label
-from tkinter.ttk import Frame, Style
+import requests
+import threading
 
-from serials.time_utils import *
-from serials.image_util import read_icons
+from tkinter.ttk import Frame, Style
+from tkinter import Tk, BOTH, LabelFrame, Label
+
+from utils.time_utils import *
+from utils.image_util import read_icons
 from serials.serial_log import export_csv
 from serials.serial_reader import SerialArduino, read_config
+
+from serials.sensor_updates import update_battery, update_speedometer
+
+
+URL = "https://httpbin.org/get"
 
 
 class EDRMonitor(Frame):
@@ -15,6 +23,8 @@ class EDRMonitor(Frame):
         self.temp = 0
         self.speed = 0
         self.power = 0
+
+        self.speedometer_percentage = -50
         self.batt_percentage = 100
 
         self.ori_width = 1536
@@ -36,13 +46,22 @@ class EDRMonitor(Frame):
         self.initUI()
         self.update_time()
 
-        self.init_connection()
+        self.demo()
+
+        # self.init_connection()
 
     def init_connection(self):
         port, columns, baud_rate = read_config("./config.json")
         self.ser = SerialArduino(port, baud_rate, columns)
         self.ser.connect()
         self.update_sensor()
+
+    def demo(self):
+        '''
+        DEMO IS HERE
+        :return: None
+        '''
+        self.after(100, self.demo)
 
     def update_sensor(self):
         line = self.ser.readline()
@@ -72,8 +91,18 @@ class EDRMonitor(Frame):
             self.total_distance += distance
             self.spd_lbl.config(text="{:4.2f}".format(speed))
             self.dist_lbl.config(text="{:5.2f} KM".format(self.total_distance))
-
         self.after(1, self.update_sensor)
+
+    def update_sensor_rest(self):
+        def sent_request():
+            response = requests.get(URL)
+            if response.status_code == 200:
+                a = response.json()
+                print(a)
+
+        t = threading.Thread(target=sent_request)
+        t.start()
+        self.after(1000, self.update_sensor_rest)
 
     def update_img(self, img_lbl, img):
         img_lbl.configure(image=img)
@@ -85,29 +114,29 @@ class EDRMonitor(Frame):
     def h(self, n):
         return int(self.height * n / self.ori_height / 1.09)
 
-    def map_vu_meter(self, speed):
-        large_div, small_div = 10, 5
-        val, rem = divmod(speed, large_div)
-        return (val * large_div) + (rem // small_div * small_div)
-
-    def update_vu(self, speed):
-        vu_val = self.map_vu_meter(speed)
-        vu_img = self.VU[str(vu_val)]
-        self.vu_lbl.configure(image=vu_img)
-        self.vu_lbl.image = vu_img
-        self.pad_lbl.configure(text='{:>4}%'.format(speed))
-
-    def map_batt_percent(self, percent):
-        val, rem = divmod(percent, 25)
-        offset = 1 if rem != 0 else 0
-        return (val + offset) * 25
-
-    def update_batt(self, percent):
-        batt_val = self.map_batt_percent(percent)
-        batt_img = self.BATT[str(batt_val)]
-        self.battery_img.configure(image=batt_img)
-        self.battery_img.image = batt_img
-        self.battery_lbl.configure(text="{:>4}%".format(percent))
+    # def map_vu_meter(self, speed):
+    #     large_div, small_div = 10, 5
+    #     val, rem = divmod(speed, large_div)
+    #     return (val * large_div) + (rem // small_div * small_div)
+    #
+    # def update_vu(self, speed):
+    #     vu_val = self.map_vu_meter(speed)
+    #     vu_img = self.VU[str(vu_val)]
+    #     self.vu_lbl.configure(image=vu_img)
+    #     self.vu_lbl.image = vu_img
+    #     self.pad_lbl.configure(text='{:>4}%'.format(speed))
+    #
+    # def map_batt_percent(self, percent):
+    #     val, rem = divmod(percent, 25)
+    #     offset = 1 if rem != 0 else 0
+    #     return (val + offset) * 25
+    #
+    # def update_batt(self, percent):
+    #     batt_val = self.map_batt_percent(percent)
+    #     batt_img = self.BATT[str(batt_val)]
+    #     self.battery_img.configure(image=batt_img)
+    #     self.battery_img.image = batt_img
+    #     self.battery_lbl.configure(text="{:>4}%".format(percent))
 
     def update_time(self):
         self.time_lbl.config(text=get_datetime())
