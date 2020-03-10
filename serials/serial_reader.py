@@ -38,7 +38,7 @@ class SerialArduino:
     def readline(self):
         try:
             line = self.ser.readline()
-            line = line.decode('utf-8').rstrip()
+            line = line.decode().rstrip()
             line = json.loads(line)
             return line
         except json.decoder.JSONDecodeError:

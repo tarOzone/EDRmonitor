@@ -30,11 +30,11 @@ class EDRMonitor(Frame):
         self.batt_percentage = 100
         self.speedometer_percentage = 0
 
-        self.VU = read_icons('./images/vu20/*.png', self.w(500), self.h(100))
-        self.BATT = read_icons('./images/battery/*.png', self.w(150), self.h(100))
-        self.LOGO = read_icons('./images/logo/*.png', self.w(200), self.h(200))
-        self.HALL = read_icons('./images/hall/*.png', self.w(150), self.h(150))
-        self.TEMP = read_icons('./images/temp/*.png', self.w(150), self.h(150))
+        self.VU = read_icons('data/vu20/*.png', self.w(500), self.h(100))
+        self.BATT = read_icons('data/battery/*.png', self.w(150), self.h(100))
+        self.LOGO = read_icons('data/logo/*.png', self.w(200), self.h(200))
+        self.HALL = read_icons('data/hall/*.png', self.w(150), self.h(150))
+        self.TEMP = read_icons('data/temp/*.png', self.w(150), self.h(150))
 
         self.init_datetime = to_datetime_format(get_datetime_split())
         self.total_power = 0
@@ -46,7 +46,7 @@ class EDRMonitor(Frame):
         self.update_time()
 
         # self.update_sensor_rest()
-        self.init_connection()
+        # self.init_connection()
 
     def init_connection(self):
         port, columns, baud_rate = read_config("./config.json")
