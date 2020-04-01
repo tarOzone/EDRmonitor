@@ -1,16 +1,13 @@
-import requests
 import threading
-
 from tkinter.ttk import Frame, Style
 from tkinter import Tk, BOTH, LabelFrame, Label
 
-from utils.time_utils import *
-from utils.image_util import read_icons
-from serials.serial_log import export_csv
-from serials.serial_reader import SerialArduino, read_config
+from EDRmonitor.serial import run_serial
+from EDRmonitor.utils.time_utils import *
+from EDRmonitor.utils.image_util import read_icons
 
+from serials.serial_log import export_csv
 from serials.sensor_updates import update_hall, update_temp
-from serials.sensor_updates import update_battery, update_speedometer
 from serials.sensor_updates import update_speed, update_power, update_distance
 
 
@@ -18,40 +15,46 @@ URL = "https://edrmonitor.sutrithip.com/"
 
 
 class EDRMonitor(Frame):
-    def __init__(self, root, width, height):
+    def __init__(self, width, height):
         super().__init__()
+
+        # Init dimension of the display
         self.ori_width = 1536
         self.ori_height = 864
         self.width = width
         self.height = height
 
+        # Init the initialized values
         self.hall = 0
         self.temp = 0
+        self.total_power = 0
+        self.total_distance = 0
         self.batt_percentage = 100
         self.speedometer_percentage = 0
 
+        # Show images with the specific sizes
         self.VU = read_icons('data/vu20/*.png', self.w(500), self.h(100))
         self.BATT = read_icons('data/battery/*.png', self.w(150), self.h(100))
         self.LOGO = read_icons('data/logo/*.png', self.w(200), self.h(200))
         self.HALL = read_icons('data/hall/*.png', self.w(150), self.h(150))
         self.TEMP = read_icons('data/temp/*.png', self.w(150), self.h(150))
 
+        # The processes are here
         self.init_datetime = to_datetime_format(get_datetime_split())
-        self.total_power = 0
-        self.total_distance = 0
-        self.records = []
-
-        self.root = root
         self.initUI()
         self.update_time()
 
-        # self.update_sensor_rest()
-        # self.init_connection()
+        # To be exported as csv
+        self.records = []
+
+        # Init serial connection
+        self.init_connection()
 
     def init_connection(self):
-        port, columns, baud_rate = read_config("./config.json")
-        self.ser = SerialArduino(port, baud_rate, columns)
-        self.ser.connect()
+        self.gps_sensor = run_serial.RunSer(stop_event, port="COM14", name="gps_sensor")
+        self.gps_sensor.start()
+        self.realtime_sensor = run_serial.RunSer(stop_event, port="COM7", name="realtime_sensor")
+        self.realtime_sensor.start()
         self.update_sensor()
 
     def read_sensors(self, line):
@@ -59,50 +62,31 @@ class EDRMonitor(Frame):
         speed = line.get('speed', 0.)
         distance = line.get('distance', 0.)
         power = line.get('power', 0)
-        return speed, status, power, distance
+        temp = line.get('temp', 0)
+        return speed, status, power, distance, temp
 
     def update_sensor(self):
-        line = self.ser.readline()
-        if line is None:
-            print("[Error] Disconnected")
-            self.init_datetime = to_datetime_format(get_datetime_split())
-            self.total_power = 0
-            self.total_distance = 0
-            self.ser.connect()
-            print("[Error] Reconnected!")
-        elif line == {}:
-            print("......")
+        line_gps = self.gps_sensor.line
+        line = self.realtime_sensor.line
+        line.update(line_gps)
+
+        speed, status, power, distance, temp = self.read_sensors(line)
+        if status:
+            self.records.append(line)
         else:
-            speed, status, power, distance = self.read_sensors(line)
+            if len(self.records) != 0:
+                export_csv(self.records, self.ser.csv_columns, save_path="logs")
+                self.records.clear()
+        self.total_power += power
+        self.total_distance += distance
 
-            if status:
-                self.records.append(line)
-            else:
-                if len(self.records) != 0:
-                    export_csv(self.records, self.ser.csv_columns, save_path="logs")
-                    self.records.clear()
-
-            self.total_power += power
-            self.total_distance += distance
-
-            # update hall, speed, power, and distance
-            update_hall(self.hall_lbl, status, self.HALL)
-            update_speed(self.spd_lbl, speed)
-            update_power(self.pw_lbl, self.total_power)
-            update_distance(self.dist_lbl, self.total_distance)
-
-        self.after(1, self.update_sensor)
-
-    def update_sensor_rest(self):
-        def sent_request():
-            response = requests.get(URL)
-            if response.status_code == 200:
-                a = response.text
-                print(a)
-
-        t = threading.Thread(target=sent_request)
-        t.start()
-        self.after(1000, self.update_sensor_rest)
+        # update hall, speed, power, and distance
+        update_hall(self.hall_lbl, status, self.HALL)
+        update_speed(self.spd_lbl, speed)
+        update_temp(self.temp_lbl, temp, self.TEMP)
+        update_power(self.pw_lbl, self.total_power)
+        update_distance(self.dist_lbl, self.total_distance)
+        self.after(20, self.update_sensor)
 
     def w(self, n):
         return int(self.width * n / self.ori_width / 1.09)
@@ -157,7 +141,6 @@ class EDRMonitor(Frame):
         self.temp_lbl = self._init_image_label(sensor_labelframe, self.TEMP[str('0')])
         self.temp_lbl.pack(side="left")
 
-
         right_labelframe = LabelFrame(self, bg="#212121", borderwidth=0)
         right_labelframe.pack(side='left', fill='y')
         batt_labelframe = LabelFrame(right_labelframe, bg="#212121", borderwidth=0)
@@ -172,14 +155,20 @@ class EDRMonitor(Frame):
 
 
 if __name__ == '__main__':
-    # init root for display
-    root = Tk()
-    root.wm_attributes('-fullscreen', 'true')
+    try:
+        # init root for display
+        root = Tk()
+        root.wm_attributes('-fullscreen', 'true')
 
-    # get dimension (width, height) to make it dynamically - resizing.
-    width, height = root.winfo_screenwidth(), root.winfo_screenheight()
-    print("width:", width, ", height:", height)
+        # get dimension (width, height) to make it dynamically - resizing.
+        width, height = root.winfo_screenwidth(), root.winfo_screenheight()
+        print("width:", width, ", height:", height)
 
-    # init the monitor from root.
-    app = EDRMonitor(root, width, height)
-    root.mainloop()
+        # init the monitor from root.
+        stop_event = threading.Event()
+        app = EDRMonitor(width, height)
+        root.mainloop()
+    except KeyboardInterrupt:
+        root.quit()
+    finally:
+        stop_event.set()

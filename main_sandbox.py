@@ -1,9 +1,9 @@
 import time
-import json
 import threading
 from tkinter import *
-from utils.time_utils import *
-from serial import Serial
+from EDRmonitor.utils.time_utils import *
+
+from EDRmonitor.serial.run_serial import RunSer
 
 
 def get_time():
@@ -11,88 +11,13 @@ def get_time():
     return to_time_format(get_datetime_split())
 
 
-class Q:
-    def __init__(self, maxsize=10):
-        self.q = []
-        self.maxsize = maxsize
-
-    def enqueue(self, val):
-        self.q.append(val)
-        if len(self.q) > self.maxsize:
-            self.q.pop(0)
-
-    def dequeue(self):
-        if len(self.q) == 0:
-            raise IndexError("Queue is empty")
-        return self.q.pop(0)
-
-    def peek(self):
-        if len(self.q) == 0:
-            raise IndexError("Queue is empty")
-        return self.q[0]
-
-    @property
-    def len(self):
-        return len(self.q)
-
-    def tolist(self):
-        return self.q
-
-
-class RunL1(threading.Thread):
-    def __init__(self, _stop_event):
-        self.time = get_time()
-        self.lock = threading.Lock()
-        self.stop_event = _stop_event
-        threading.Thread.__init__(self)
-
-    def run(self):
-        while not self.stop_event.is_set():
-            with self.lock:
-                self.time = get_time()
-        print("\n******************************* RUN_L1 ended *******************************")
-
-
-class RunSer(threading.Thread):
-    def __init__(self, _stop_event, port, baud_rate=9600, maxsize=5):
-        self.q = Q(maxsize=maxsize)
-        self.time = 0
-        self.port = port
-        self.baud_rate = baud_rate
-        self.ser = self._init_connection()
-        self.lock = threading.Lock()
-        self.stop_event = _stop_event
-        threading.Thread.__init__(self)
-
-    def _init_connection(self):
-        return Serial(self.port, self.baud_rate)
-
-    def _extract(self):
-        try:
-            line = self.ser.readline()
-            return line.decode().rstrip()
-        except (AttributeError, UnicodeDecodeError):
-            return "{}"
-
-    def run(self):
-        while not self.stop_event.is_set():
-            with self.lock:
-                start = time.time()
-                try:
-                    line = self._extract()
-                    line = json.loads(line)
-                except json.decoder.JSONDecodeError:
-                    line = {}
-                self.q.enqueue(line)
-                self.time = time.time() - start
-        print("\n******************************* RUN_SER ended *******************************")
-
-
 class Main:
     def __init__(self):
         # init threads
-        self.run_l2 = RunSer(stop_event, port="COM7", baud_rate=9600, maxsize=10)
+        self.run_l2 = RunSer(stop_event, port="COM7", baud_rate=9600)
         self.run_l2.start()
+        self.run_l3 = RunSer(stop_event, port="COM14", baud_rate=9600)
+        self.run_l3.start()
 
         print("Booting up...")
         time.sleep(1)
@@ -111,21 +36,20 @@ class Main:
         self.l3.pack()
 
         # update every
-        self.update_l1()
-        self.update_l2()
-        self.update_l3()
+        self.update_l1()    # Single thread
+        self.update_l2()    # Serial
+        self.update_l3()    # Serial
 
     def update_l1(self):
         self.l1.config(text=f"Time: {get_time()}")
         self.root.after(960, self.update_l1)
 
     def update_l2(self):
-        if self.run_l2.q.len != 0:
-            q = self.run_l2.q.dequeue()
-            t = self.run_l2.time
+        q = self.run_l2.line
+        t = self.run_l2.time
 
-            self.l2_1.config(text=f"Pedal: {q.get('pedal', 0)}%")
-            self.l2_2.config(text=f"Speed: {q.get('speed', 0.00)}, {t:.2f}")
+        self.l2_1.config(text=f"Pedal: {q.get('pedal', 0)}%")
+        self.l2_2.config(text=f"Speed: {q.get('speed', 0.00)}, {t:.2f}")
 
         self.root.after(20, self.update_l2)
 
@@ -139,6 +63,29 @@ if __name__ == '__main__':
     try:
         main.root.mainloop()
     except KeyboardInterrupt:
-        pass
+        main.root.quit()
     finally:
         stop_event.set()
+
+    # import os
+    # import csv
+    # from EDRmonitor.exports import exporter
+    #
+    # serial_list = [
+    #     {
+    #         'status': True, 'mode': 1, 'pedal': 1, 'temp': 1, 'elapsed_time': 9999,
+    #         'latitude': 1, 'longitude': 2, 'altitude': 3, 'speed': 4, 'distance': 5
+    #     }
+    # ]
+    #
+    # dt = get_datetime(datetime_sep="_", date_sep="-", time_sep="-")
+    # csv_filename = os.path.join("logs", f"{dt}.csv")
+    # f = open(csv_filename, 'w', newline='')
+    #
+    # writer = csv.DictWriter(f, fieldnames=exporter.columns)
+    # writer.writeheader()
+    # # offset = serial_list[0].copy()    # unused
+    # for data in serial_list:
+    #     data.pop('status', None)
+    #     writer.writerow(data)
+    # f.close()

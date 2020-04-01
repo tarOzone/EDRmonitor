@@ -15,44 +15,31 @@ def get_datetime_split(return_date=True, return_time=True):
     return ret
 
 
-def to_date_format(date_split):
+def to_date_format(date_split, date_sep="/"):
     if len(date_split) == 3:
         d, m, y = date_split
     if len(date_split) == 6:
         d, m, y, _, _, _ = date_split
-    return "{:02d}/{:02d}/{:04d}".format(d, m, y)
+    return f"{d:02d}{date_sep}{m:02d}{date_sep}{y:04d}"
 
 
-def to_time_format(time_split):
+def to_time_format(time_split, time_sep=":"):
     if len(time_split) == 3:
         hr, _min, sec = time_split
     if len(time_split) == 6:
         _, _, _, hr, _min, sec = time_split
-    return "{:02d}:{:02d}:{:02d}".format(hr, _min, sec)
+    return f"{hr:02d}{time_sep}{_min:02d}{time_sep}{sec:02d}"
 
 
-def to_datetime_format(datetime_split, sep=SEP):
+def to_datetime_format(datetime_split, sep=SEP, date_sep="/", time_sep=":"):
     d, m, y, hr, _min, sec = datetime_split
-    return to_date_format((d, m, y)) + sep + to_time_format((hr, _min, sec))
+    return to_date_format((d, m, y), date_sep) + sep + to_time_format((hr, _min, sec), time_sep)
 
 
-def get_datetime(sep=SEP):
-    return to_datetime_format(get_datetime_split(), sep)
+def get_datetime(datetime_sep=SEP, date_sep="/", time_sep=":"):
+    return to_datetime_format(get_datetime_split(), datetime_sep, date_sep, time_sep)
 
 
 def get_diff_time(s1, s2, fmt=DATETIME_FORMAT):
     return datetime.strptime(s2, fmt) - datetime.strptime(s1, fmt)
-
-
-if __name__ == "__main__":
-    from time import sleep
-
-    s1 = to_datetime_format(get_datetime_split())
-    print(s1)
-    while True:
-        sleep(1)
-
-        s2 = to_datetime_format(get_datetime_split())
-        tdelta = get_diff_time(s1, s2)
-        print(s2, "->", tdelta)
 
