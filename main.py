@@ -6,9 +6,9 @@ from EDRmonitor.serial import run_serial
 from EDRmonitor.utils.time_utils import *
 from EDRmonitor.utils.image_util import read_icons
 
-from serials.serial_log import export_csv
-from serials.sensor_updates import update_hall, update_temp
-from serials.sensor_updates import update_speed, update_power, update_distance
+from EDRmonitor.serials.serial_log import export_csv
+from EDRmonitor.serials.sensor_updates import update_hall, update_temp
+from EDRmonitor.serials.sensor_updates import update_speed, update_power, update_distance
 
 
 URL = "https://edrmonitor.sutrithip.com/"
