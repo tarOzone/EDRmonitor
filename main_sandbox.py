@@ -66,26 +66,3 @@ if __name__ == '__main__':
         main.root.quit()
     finally:
         stop_event.set()
-
-    # import os
-    # import csv
-    # from EDRmonitor.exports import exporter
-    #
-    # serial_list = [
-    #     {
-    #         'status': True, 'mode': 1, 'pedal': 1, 'temp': 1, 'elapsed_time': 9999,
-    #         'latitude': 1, 'longitude': 2, 'altitude': 3, 'speed': 4, 'distance': 5
-    #     }
-    # ]
-    #
-    # dt = get_datetime(datetime_sep="_", date_sep="-", time_sep="-")
-    # csv_filename = os.path.join("logs", f"{dt}.csv")
-    # f = open(csv_filename, 'w', newline='')
-    #
-    # writer = csv.DictWriter(f, fieldnames=exporter.columns)
-    # writer.writeheader()
-    # # offset = serial_list[0].copy()    # unused
-    # for data in serial_list:
-    #     data.pop('status', None)
-    #     writer.writerow(data)
-    # f.close()

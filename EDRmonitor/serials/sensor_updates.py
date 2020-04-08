@@ -8,7 +8,8 @@ def _map_0_to_100(val):
 
 def _update_text_label(txt_lbl, val, name):
     if name == 'speed':
-        val = f"{val:4.2f}"
+        val = f"{val:.2f}"
+        val = val.zfill(6)
     elif name == 'power':
         val = f"{val:04d} KW"
     elif name == 'distance':

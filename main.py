@@ -8,6 +8,7 @@ from EDRmonitor.utils.image_util import read_icons
 
 from EDRmonitor.serials.serial_log import export_csv
 from EDRmonitor.serials.sensor_updates import update_hall, update_temp
+from EDRmonitor.serials.sensor_updates import update_speedometer
 from EDRmonitor.serials.sensor_updates import update_speed, update_power, update_distance
 
 
@@ -63,14 +64,17 @@ class EDRMonitor(Frame):
         distance = line.get('distance', 0.)
         power = line.get('power', 0)
         temp = line.get('temp', 0)
-        return speed, status, power, distance, temp
+        pedal = line.get('pedal', 0)
+        return speed, status, power, distance, temp, pedal
 
     def update_sensor(self):
-        line_gps = self.gps_sensor.line
         line = self.realtime_sensor.line
+        line_gps = self.gps_sensor.line
         line.update(line_gps)
 
-        speed, status, power, distance, temp = self.read_sensors(line)
+        print(line)
+
+        speed, status, power, distance, temp, pedal = self.read_sensors(line)
         if status:
             self.records.append(line)
         else:
@@ -86,6 +90,7 @@ class EDRMonitor(Frame):
         update_temp(self.temp_lbl, temp, self.TEMP)
         update_power(self.pw_lbl, self.total_power)
         update_distance(self.dist_lbl, self.total_distance)
+        update_speedometer(self.pad_lbl, self.vu_lbl, pedal, self.VU)
         self.after(20, self.update_sensor)
 
     def w(self, n):
