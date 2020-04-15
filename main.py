@@ -65,7 +65,12 @@ class EDRMonitor(Frame):
         power = line.get('power', 0)
         temp = line.get('temp', 0)
         pedal = line.get('pedal', 0)
-        return speed, status, power, distance, temp, pedal
+
+        lat = line.get('latitude', '?')
+        lng = line.get('longitude', '?')
+        alt = line.get('altitude', '?')
+
+        return speed, status, power, distance, temp, pedal, lat, lng, alt
 
     def update_sensor(self):
         line = self.realtime_sensor.line
@@ -74,7 +79,7 @@ class EDRMonitor(Frame):
 
         print(line)
 
-        speed, status, power, distance, temp, pedal = self.read_sensors(line)
+        speed, status, power, distance, temp, pedal, lat, lng, alt = self.read_sensors(line)
         if status:
             self.records.append(line)
         else:
@@ -94,10 +99,10 @@ class EDRMonitor(Frame):
         self.after(20, self.update_sensor)
 
     def w(self, n):
-        return int(self.width * n / self.ori_width / 1.09)
+        return int(self.width * n / self.ori_width / 1.01)
 
     def h(self, n):
-        return int(self.height * n / self.ori_height / 1.09)
+        return int(self.height * n / self.ori_height / 1.01)
 
     def update_time(self):
         self.time_lbl.config(text=get_datetime())
